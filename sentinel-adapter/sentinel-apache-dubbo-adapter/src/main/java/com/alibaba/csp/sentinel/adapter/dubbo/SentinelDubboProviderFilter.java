@@ -73,29 +73,38 @@ public class SentinelDubboProviderFilter extends BaseSentinelDubboFilter {
         try {
             // Only need to create entrance context at provider side, as context will take effect
             // at entrance of invocation chain only (for inbound traffic).
+            // 构建整个链路的入口资源
             ContextUtil.enter(methodResourceName, origin);
+            // 将dubbo接口定义为资源，方向为流入
             interfaceEntry = SphU.entry(interfaceResourceName, ResourceTypeConstants.COMMON_RPC, EntryType.IN);
+            // 将dubbo接口方法定义为资源，方向为流入
             methodEntry = SphU.entry(methodResourceName, ResourceTypeConstants.COMMON_RPC, EntryType.IN,
                 invocation.getArguments());
             Result result = invoker.invoke(invocation);
             if (result.hasException()) {
+                // 异常处理，去设置此次 entry error 的值
                 Tracer.traceEntry(result.getException(), interfaceEntry);
                 Tracer.traceEntry(result.getException(), methodEntry);
             }
             return result;
         } catch (BlockException e) {
+            // 命中限流、熔断 等，抛出 RuntimeException 异常
             return DubboAdapterGlobalConfig.getProviderFallback().handle(invoker, invocation, e);
         } catch (RpcException e) {
+            // 异常处理，去设置此次 entry error 的值
             Tracer.traceEntry(e, interfaceEntry);
             Tracer.traceEntry(e, methodEntry);
             throw e;
         } finally {
+            // 接口方法退出
             if (methodEntry != null) {
                 methodEntry.exit(1, invocation.getArguments());
             }
+            // 接口类退出
             if (interfaceEntry != null) {
                 interfaceEntry.exit();
             }
+            // 链路入口退出，等子节点都退出了，将当前线程的 Context 置空
             ContextUtil.exit();
         }
     }

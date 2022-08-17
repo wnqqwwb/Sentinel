@@ -108,6 +108,7 @@ class CtEntry extends Entry {
                 if (chain != null) {
                     chain.exit(context, resourceWrapper, count, args);
                 }
+                // 在请求处理前断路器由OPEN到HALF_OPEN，这里结束需要去将HALF_OPEN状态恢复到OPEN
                 // Go through the existing terminate handlers (associated to this invocation).
                 callExitHandlersAndCleanUp(context);
 

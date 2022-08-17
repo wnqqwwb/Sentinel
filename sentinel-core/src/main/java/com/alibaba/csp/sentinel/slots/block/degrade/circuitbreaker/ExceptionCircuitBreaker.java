@@ -68,30 +68,39 @@ public class ExceptionCircuitBreaker extends AbstractCircuitBreaker {
             return;
         }
         Throwable error = entry.getError();
+        // 获取当前时间窗口
         SimpleErrorCounter counter = stat.currentWindow().value();
+        // 当前请求也是异常的，则异常次数+1
         if (error != null) {
             counter.getErrorCount().add(1);
         }
+        // 没有异常，总数+1
         counter.getTotalCount().add(1);
 
+        // 处理断路器状态变更
         handleStateChangeWhenThresholdExceeded(error);
     }
 
     private void handleStateChangeWhenThresholdExceeded(Throwable error) {
+        // 当前断路器是OPEN，则无需处理
         if (currentState.get() == State.OPEN) {
             return;
         }
-        
+
+        // 当前断路器是HALF_OPEN
         if (currentState.get() == State.HALF_OPEN) {
+            // 此次请求没有异常，那么去关闭断路器
             // In detecting request
             if (error == null) {
                 fromHalfOpenToClose();
             } else {
+                // 还是异常，则将断路器从HALF_OPEN变更到OPEN，并重新计算时间下一次重试时间
                 fromHalfOpenToOpen(1.0d);
             }
             return;
         }
-        
+
+        // 当前断路器是CLOSED状态
         List<SimpleErrorCounter> counters = stat.values();
         long errCount = 0;
         long totalCount = 0;
@@ -99,14 +108,17 @@ public class ExceptionCircuitBreaker extends AbstractCircuitBreaker {
             errCount += counter.errorCount.sum();
             totalCount += counter.totalCount.sum();
         }
+        // 请求总是没有达到最小请求数，直接返回
         if (totalCount < minRequestAmount) {
             return;
         }
         double curCount = errCount;
+        // 如果是使用异常比例数，则计算出异常的次数
         if (strategy == DEGRADE_GRADE_EXCEPTION_RATIO) {
             // Use errorRatio
             curCount = errCount * 1.0d / totalCount;
         }
+        // 异常数达到阈值，将断路器状态置为OPEN
         if (curCount > threshold) {
             transformToOpen(curCount);
         }

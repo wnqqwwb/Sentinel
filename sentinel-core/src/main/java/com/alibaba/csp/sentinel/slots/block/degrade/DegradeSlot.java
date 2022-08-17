@@ -40,6 +40,7 @@ public class DegradeSlot extends AbstractLinkedProcessorSlot<DefaultNode> {
     @Override
     public void entry(Context context, ResourceWrapper resourceWrapper, DefaultNode node, int count,
                       boolean prioritized, Object... args) throws Throwable {
+        // 进行校验，是放行还是熔断
         performChecking(context, resourceWrapper);
 
         fireEntry(context, resourceWrapper, node, count, prioritized, args);
@@ -62,16 +63,19 @@ public class DegradeSlot extends AbstractLinkedProcessorSlot<DefaultNode> {
     @Override
     public void exit(Context context, ResourceWrapper r, int count, Object... args) {
         Entry curEntry = context.getCurEntry();
+        // 这次的请求命中了规则，不需要处理，直接进入去退出下一个插槽
         if (curEntry.getBlockError() != null) {
             fireExit(context, r, count, args);
             return;
         }
         List<CircuitBreaker> circuitBreakers = DegradeRuleManager.getCircuitBreakers(r.getName());
+        // 当前资源没有断路需要处理，也是直接去退出下一个插槽
         if (circuitBreakers == null || circuitBreakers.isEmpty()) {
             fireExit(context, r, count, args);
             return;
         }
 
+        // 没有命中规则，又有对应的断路器，则需要去进行对应处理，是否需要切换断路器状态
         if (curEntry.getBlockError() == null) {
             // passed request
             for (CircuitBreaker circuitBreaker : circuitBreakers) {

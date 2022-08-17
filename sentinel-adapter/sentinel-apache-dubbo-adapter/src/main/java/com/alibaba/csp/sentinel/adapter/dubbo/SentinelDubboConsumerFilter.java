@@ -76,7 +76,9 @@ public class SentinelDubboConsumerFilter extends BaseSentinelDubboFilter {
         String interfaceResourceName = getInterfaceName(invoker, prefix);
         String methodResourceName = getMethodName(invoker, invocation, prefix);
         try {
+            // 将消费的dubbo接口定义为资源，方向为流出
             interfaceEntry = SphU.entry(interfaceResourceName, ResourceTypeConstants.COMMON_RPC, EntryType.OUT);
+            // 将消费的dubbo接口方法定义为资源，方向为流出
             methodEntry = SphU.entry(methodResourceName, ResourceTypeConstants.COMMON_RPC, EntryType.OUT,
                 invocation.getArguments());
             Result result = invoker.invoke(invocation);

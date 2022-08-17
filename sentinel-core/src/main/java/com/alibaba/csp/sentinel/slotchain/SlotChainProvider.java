@@ -36,10 +36,11 @@ public final class SlotChainProvider {
      * @return new created slot chain
      */
     public static ProcessorSlotChain newSlotChain() {
+        // 存在，则需要根据SPI重新构建，有可能用户动态新增了插槽
         if (slotChainBuilder != null) {
             return slotChainBuilder.build();
         }
-
+        // 执行链不存在则直接进行构建
         // Resolve the slot chain builder SPI.
         slotChainBuilder = SpiLoader.of(SlotChainBuilder.class).loadFirstInstanceOrDefault();
 

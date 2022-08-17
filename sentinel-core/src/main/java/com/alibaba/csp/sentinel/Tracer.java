@@ -111,7 +111,7 @@ public class Tracer {
         if (entry == null) {
             return;
         }
-
+        // 设置 entry error，后面熔断状态切换需要根据这个判断
         entry.setError(e);
     }
 
@@ -202,10 +202,11 @@ public class Tracer {
         if (t == null || t instanceof BlockException) {
             return false;
         }
+        // 默认为null
         if (exceptionPredicate != null) {
             return exceptionPredicate.test(t);
         }
-
+        // 默认为null，忽略的异常类
         if (ignoreClasses != null) {
             for (Class<? extends Throwable> clazz : ignoreClasses) {
                 if (clazz != null && clazz.isAssignableFrom(t.getClass())) {
@@ -213,6 +214,7 @@ public class Tracer {
                 }
             }
         }
+        // 默认为null，需要处理的异常类
         if (traceClasses != null) {
             for (Class<? extends Throwable> clazz : traceClasses) {
                 if (clazz != null && clazz.isAssignableFrom(t.getClass())) {

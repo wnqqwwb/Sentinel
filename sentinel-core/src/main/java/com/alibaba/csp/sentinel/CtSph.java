@@ -116,13 +116,15 @@ public class CtSph implements Sph {
 
     private Entry entryWithPriority(ResourceWrapper resourceWrapper, int count, boolean prioritized, Object... args)
         throws BlockException {
+        // 获取入口链路上下文
         Context context = ContextUtil.getContext();
+        // 超出链路入口阈值了，直接返回，不做规则校验
         if (context instanceof NullContext) {
             // The {@link NullContext} indicates that the amount of context has exceeded the threshold,
             // so here init the entry only. No rule checking will be done.
             return new CtEntry(resourceWrapper, null, context);
         }
-
+        // 上下文为空，使用默认的上下文
         if (context == null) {
             // Using default context.
             context = InternalContextUtil.internalEnter(Constants.CONTEXT_DEFAULT_NAME);
@@ -132,21 +134,34 @@ public class CtSph implements Sph {
         if (!Constants.ON) {
             return new CtEntry(resourceWrapper, null, context);
         }
-
+        /*
+            加载需要处理的插槽链
+            NodeSelectorSlot 负责收集资源的路径，并将这些资源的调用路径，以树状结构存储起来，用于根据调用路径来限流降级；
+            ClusterBuilderSlot 则用于存储资源的统计信息以及调用者信息，例如该资源的 RT, QPS, thread count 等等，这些信息将用作为多维度限流，降级的依据；
+            StatisticSlot 则用于记录、统计不同纬度的 runtime 指标监控信息；
+            FlowSlot 则用于根据预设的限流规则以及前面 slot 统计的状态，来进行流量控制；
+            AuthoritySlot 则根据配置的黑白名单和调用来源信息，来做黑白名单控制；
+            DegradeSlot 则通过统计信息以及预设的规则，来做熔断降级；
+            SystemSlot 则通过系统的状态，例如 load1 等，来控制总的入口流量；
+            ParamFlowSlot 用于参数限流
+         */
         ProcessorSlot<Object> chain = lookProcessChain(resourceWrapper);
 
         /*
+         * 资源已经达到上限了，直接返回了
          * Means amount of resources (slot chain) exceeds {@link Constants.MAX_SLOT_CHAIN_SIZE},
          * so no rule checking will be done.
          */
         if (chain == null) {
             return new CtEntry(resourceWrapper, null, context);
         }
-
+        // 构建Entry，将Entry挂载到整个入口链路中，按层级分 入口链路 -> 接口类 -> 具体接口
         Entry e = new CtEntry(resourceWrapper, chain, context);
         try {
+            // 进入执行链，处理具体的插槽
             chain.entry(context, resourceWrapper, null, count, prioritized, args);
         } catch (BlockException e1) {
+            // 命中规则执行逻辑
             e.exit(count, args);
             throw e1;
         } catch (Throwable e1) {
@@ -197,11 +212,11 @@ public class CtSph implements Sph {
             synchronized (LOCK) {
                 chain = chainMap.get(resourceWrapper);
                 if (chain == null) {
-                    // Entry size limit.
+                    // Entry size limit. 资源数量 不能大于6000
                     if (chainMap.size() >= Constants.MAX_SLOT_CHAIN_SIZE) {
                         return null;
                     }
-
+                    // 构建资源的执行链
                     chain = SlotChainProvider.newSlotChain();
                     Map<ResourceWrapper, ProcessorSlotChain> newMap = new HashMap<ResourceWrapper, ProcessorSlotChain>(
                         chainMap.size() + 1);

@@ -110,10 +110,12 @@ public class ContextUtil {
      * @return The invocation context of the current thread
      */
     public static Context enter(String name, String origin) {
+        // 入口资源不能是默认的 context，每个应用只有一个
         if (Constants.CONTEXT_DEFAULT_NAME.equals(name)) {
             throw new ContextNameDefineException(
                 "The " + Constants.CONTEXT_DEFAULT_NAME + " can't be permit to defined!");
         }
+        // 构建一个新的入口节点 DefaultNode，以 methodResourceName 命名
         return trueEnter(name, origin);
     }
 
@@ -121,6 +123,7 @@ public class ContextUtil {
         Context context = contextHolder.get();
         if (context == null) {
             Map<String, DefaultNode> localCacheNameMap = contextNameNodeMap;
+            // 构建入口资源
             DefaultNode node = localCacheNameMap.get(name);
             if (node == null) {
                 if (localCacheNameMap.size() > Constants.MAX_CONTEXT_NAME_SIZE) {
@@ -135,10 +138,12 @@ public class ContextUtil {
                                 setNullContext();
                                 return NULL_CONTEXT;
                             } else {
+                                // 创建入口资源，资源名称就是dubbo方法名
                                 node = new EntranceNode(new StringResourceWrapper(name, EntryType.IN), null);
                                 // Add entrance node.
                                 Constants.ROOT.addChild(node);
 
+                                // 构建新的map，长度 + 1，将 DefaultNode 存放到map中
                                 Map<String, DefaultNode> newMap = new HashMap<>(contextNameNodeMap.size() + 1);
                                 newMap.putAll(contextNameNodeMap);
                                 newMap.put(name, node);
