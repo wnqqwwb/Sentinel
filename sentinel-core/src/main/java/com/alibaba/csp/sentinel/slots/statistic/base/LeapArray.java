@@ -15,13 +15,13 @@
  */
 package com.alibaba.csp.sentinel.slots.statistic.base;
 
+import com.alibaba.csp.sentinel.util.AssertUtil;
+import com.alibaba.csp.sentinel.util.TimeUtil;
+
 import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.atomic.AtomicReferenceArray;
 import java.util.concurrent.locks.ReentrantLock;
-
-import com.alibaba.csp.sentinel.util.AssertUtil;
-import com.alibaba.csp.sentinel.util.TimeUtil;
 
 /**
  * <p>
@@ -118,7 +118,17 @@ public abstract class LeapArray<T> {
             return null;
         }
 
+        // 计算当前时间所在的窗口下标
         int idx = calculateTimeIdx(timeMillis);
+
+        /*
+            计算出时间窗口的开始时间，计算公式 : 当前时间 - 当前时间 % 时间窗口大小
+            1.假设 当前时间 = 1660819681000 时间窗口大小 = 1000
+            那么 1660819681000 -> 1660819682000 这是一个时间窗口
+            2.假设 当前时间 = 1660819680906 时间窗口大小 = 1000
+            那么时间窗口开始时间是 1660819680000，1660819680000 -> 1660819681000 是一个时间窗口，
+            而不是 1660819680906 -> 1660819681906，1660819681906这个时间会计算到下一个时间窗口中。
+         */
         // Calculate current bucket start time.
         long windowStart = calculateWindowStart(timeMillis);
 
@@ -149,10 +159,12 @@ public abstract class LeapArray<T> {
                     // Successfully updated, return the created bucket.
                     return window;
                 } else {
+                    // 被其他线程竞争到了，那就让出CPU，将运行状态改为就绪态
                     // Contention failed, the thread will yield its time slice to wait for bucket available.
                     Thread.yield();
                 }
             } else if (windowStart == old.windowStart()) {
+                //在同一个时间窗口
                 /*
                  *     B0       B1      B2     B3      B4
                  * ||_______|_______|_______|_______|_______||___
@@ -166,6 +178,7 @@ public abstract class LeapArray<T> {
                  */
                 return old;
             } else if (windowStart > old.windowStart()) {
+                // 时间窗口过期了
                 /*
                  *   (old)
                  *             B0       B1      B2    NULL      B4
@@ -191,6 +204,7 @@ public abstract class LeapArray<T> {
                         updateLock.unlock();
                     }
                 } else {
+                    // 被其他线程竞争到了，那就让出CPU，将运行状态改为就绪态
                     // Contention failed, the thread will yield its time slice to wait for bucket available.
                     Thread.yield();
                 }

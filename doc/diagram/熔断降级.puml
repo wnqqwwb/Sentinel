@@ -1,0 +1,33 @@
+@startuml
+start
+:请求进入;
+note right
+  这里是以sentinel适配dubbo
+  ，自动构建的资源进行分析。
+end note
+:进入sentinel过滤器;
+:进入熔断降级插槽处理器;
+if (断路器) then (存在)
+    switch (断路器状态)
+    case ( CLOSED )
+      #palegreen : 放行;
+      detach
+    case ( OPEN )
+        if (达到重试时间) then (YES)
+            :进入HALF_OPEN;
+            :状态从OPEN -> HALF_OPEN;
+            #palegreen :放行;
+            detach
+        else (NO)
+            #pink :熔断;
+            kill
+        endif
+    case ( HALF_OPEN )
+      #pink :熔断;
+      kill
+    endswitch
+else (不存在)
+#palegreen :放行;
+detach
+endif
+@enduml

@@ -158,10 +158,10 @@ public class CtSph implements Sph {
         // 构建Entry，将Entry挂载到整个入口链路中，按层级分 入口链路 -> 接口类 -> 具体接口
         Entry e = new CtEntry(resourceWrapper, chain, context);
         try {
-            // 进入执行链，处理具体的插槽
+            // 进入执行链，处理具体地插槽
             chain.entry(context, resourceWrapper, null, count, prioritized, args);
         } catch (BlockException e1) {
-            // 命中规则执行逻辑
+            // 命中规则，清空上下文，执行插槽退出逻辑
             e.exit(count, args);
             throw e1;
         } catch (Throwable e1) {

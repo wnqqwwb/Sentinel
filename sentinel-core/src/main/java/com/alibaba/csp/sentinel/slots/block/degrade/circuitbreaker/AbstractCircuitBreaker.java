@@ -56,6 +56,7 @@ public abstract class AbstractCircuitBreaker implements CircuitBreaker {
         }
         this.observerRegistry = observerRegistry;
         this.rule = rule;
+        // 熔断规则的熔断时长，单位是s 这里统一要转成ms去计算
         this.recoveryTimeoutMs = rule.getTimeWindow() * 1000;
     }
 

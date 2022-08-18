@@ -1,0 +1,71 @@
+@startuml
+start
+:放行请求;
+:调用被保护的资源（进入业务逻辑处理）;
+:调用结束;
+:进入熔断降级插槽退出处理器;
+if (命中熔断规则) then (NO)
+    if (熔断规则) then (存在)
+        :进入请求完成处理器;
+        :获取当前时间窗口;
+        note
+        计算出时间窗口的开始时间，计算公式 : 当前时间 - 当前时间 % 时间窗口大小
+        1.假设 当前时间 = 1660819681000 时间窗口大小 = 1000
+        那么 1660819681000 -> 1660819681999 这是一个时间窗口
+
+        2.假设 当前时间 = 1660819680906 时间窗口大小 = 1000
+        那么时间窗口开始时间是 1660819680000，1660819680000 -> 1660819680999 是一个时间窗口，
+        而不是 1660819680906 -> 1660819681906，1660819681906这个时间会计算到下一个时间窗口中。
+        end note
+        if (请求异常) then (YES)
+        :当前时间窗口 ErrorCount+1;
+        else (NO)
+        endif
+        :当前时间窗口 TotalCount+1;
+        switch (断路器状态)
+            case ( OPEN )
+              #pink : 结束;
+              detach
+            case ( HALF_OPEN )
+                if (请求异常) then (YES)
+                    :断路器状态从HALF_OPEN -> OPEN;
+                    :计算出下次重试时间;
+                    note
+                    重试时间就是进入断路器从 OPEN -> HALF_OPEN的时间
+
+                    当前时间 + 熔断时长 = 下次重试时间
+                    end note
+                    #pink :结束;
+                    detach
+                else (NO)
+                    :断路器状态从HALF_OPEN -> CLOSED;
+                    :重置当前时间窗口内的统计值;
+                    note
+                    重置 请求总数、异常数
+                    end note
+                    #palegreen :结束;
+                    detach
+                endif
+            case ( CLOSED )
+              : 获取统计时长内的时间窗口;
+              : 请求总数进行累加;
+              : 请求异常数进行累加;
+              if (达到阈值) then (YES)
+                  :断路器状态从CLOSED -> OPEN;
+                  :计算出下次重试时间;
+                  #pink :结束;
+                  detach
+              else (NO)
+                #palegreen :结束;
+              endif
+            endswitch
+        detach
+    else (不存在)
+        #palegreen :结束;
+        detach
+    endif
+else (YES)
+#palegreen :结束;
+detach
+endif
+@enduml

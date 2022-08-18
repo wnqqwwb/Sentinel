@@ -15,15 +15,15 @@
  */
 package com.alibaba.csp.sentinel.slots.block.degrade.circuitbreaker;
 
-import java.util.List;
-import java.util.concurrent.atomic.LongAdder;
-
 import com.alibaba.csp.sentinel.Entry;
 import com.alibaba.csp.sentinel.context.Context;
 import com.alibaba.csp.sentinel.slots.block.degrade.DegradeRule;
 import com.alibaba.csp.sentinel.slots.statistic.base.LeapArray;
 import com.alibaba.csp.sentinel.slots.statistic.base.WindowWrap;
 import com.alibaba.csp.sentinel.util.AssertUtil;
+
+import java.util.List;
+import java.util.concurrent.atomic.LongAdder;
 
 import static com.alibaba.csp.sentinel.slots.block.RuleConstant.DEGRADE_GRADE_EXCEPTION_COUNT;
 import static com.alibaba.csp.sentinel.slots.block.RuleConstant.DEGRADE_GRADE_EXCEPTION_RATIO;
@@ -41,6 +41,7 @@ public class ExceptionCircuitBreaker extends AbstractCircuitBreaker {
     private final LeapArray<SimpleErrorCounter> stat;
 
     public ExceptionCircuitBreaker(DegradeRule rule) {
+        // 构建异常断路器，SimpleErrorCounterLeapArray 构建时间窗口
         this(rule, new SimpleErrorCounterLeapArray(1, rule.getStatIntervalMs()));
     }
 
@@ -50,8 +51,11 @@ public class ExceptionCircuitBreaker extends AbstractCircuitBreaker {
         boolean modeOk = strategy == DEGRADE_GRADE_EXCEPTION_RATIO || strategy == DEGRADE_GRADE_EXCEPTION_COUNT;
         AssertUtil.isTrue(modeOk, "rule strategy should be error-ratio or error-count");
         AssertUtil.notNull(stat, "stat cannot be null");
+        // 最小请求数
         this.minRequestAmount = rule.getMinRequestAmount();
+        // 熔断阈值
         this.threshold = rule.getCount();
+        // 统计值 总通过次数、异常次数
         this.stat = stat;
     }
 
@@ -68,13 +72,13 @@ public class ExceptionCircuitBreaker extends AbstractCircuitBreaker {
             return;
         }
         Throwable error = entry.getError();
-        // 获取当前时间窗口
+        // 获取当前时间窗口请求总数和异常数
         SimpleErrorCounter counter = stat.currentWindow().value();
         // 当前请求也是异常的，则异常次数+1
         if (error != null) {
             counter.getErrorCount().add(1);
         }
-        // 没有异常，总数+1
+        // 总数+1
         counter.getTotalCount().add(1);
 
         // 处理断路器状态变更
@@ -158,6 +162,7 @@ public class ExceptionCircuitBreaker extends AbstractCircuitBreaker {
 
     static class SimpleErrorCounterLeapArray extends LeapArray<SimpleErrorCounter> {
 
+        // 构建熔断统计的时间窗口，窗口数量 1，窗口大小就是配置的 统计时长，计算规则 统计时长/窗口数量=窗口大小
         public SimpleErrorCounterLeapArray(int sampleCount, int intervalInMs) {
             super(sampleCount, intervalInMs);
         }
@@ -169,6 +174,7 @@ public class ExceptionCircuitBreaker extends AbstractCircuitBreaker {
 
         @Override
         protected WindowWrap<SimpleErrorCounter> resetWindowTo(WindowWrap<SimpleErrorCounter> w, long startTime) {
+            // 重置时间窗口开始时间 和 时间窗口内统计的值（请求总数、异常数）
             // Update the start time and reset value.
             w.resetTo(startTime);
             w.value().reset();
