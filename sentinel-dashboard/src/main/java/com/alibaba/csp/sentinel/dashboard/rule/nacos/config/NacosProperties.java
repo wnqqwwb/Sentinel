@@ -9,7 +9,7 @@ import org.springframework.boot.context.properties.ConfigurationProperties;
  */
 @Getter
 @Setter
-@ConfigurationProperties(prefix = "nacos")
+@ConfigurationProperties(prefix = "sentinel.dashboard.rule.nacos")
 public class NacosProperties {
 
     private String serverAddr;
