@@ -1,7 +1,7 @@
 /**
  * Authority rule controller.
  */
-angular.module('sentinelDashboardApp').controller('AuthorityRuleController', ['$scope', '$stateParams', 'AuthorityRuleService', 'ngDialog',
+angular.module('sentinelDashboardApp').controller('AuthorityRuleControllerV2', ['$scope', '$stateParams', 'AuthorityRuleService', 'ngDialog',
     'MachineService',
     function ($scope, $stateParams, AuthorityRuleService, ngDialog,
               MachineService) {

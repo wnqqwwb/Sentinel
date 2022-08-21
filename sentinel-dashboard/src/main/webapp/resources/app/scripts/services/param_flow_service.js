@@ -11,32 +11,32 @@ angular.module('sentinelDashboardApp').service('ParamFlowService', ['$http', fun
       port: port
     };
     return $http({
-      url: '/paramFlow/rules',
-      params: param,
-      method: 'GET'
+        url: '/v2/paramFlow/rules',
+        params: param,
+        method: 'GET'
     });
   };
 
   this.addNewRule = function(rule) {
     return $http({
-      url: '/paramFlow/rule',
-      data: rule,
-      method: 'POST'
+        url: '/v2/paramFlow/rule',
+        data: rule,
+        method: 'POST'
     });
   };
 
   this.saveRule = function (entity) {
     return $http({
-      url: '/paramFlow/rule/' + entity.id,
-      data: entity,
-      method: 'PUT'
+        url: '/v2/paramFlow/rule/' + entity.id,
+        data: entity,
+        method: 'PUT'
     });
   };
 
   this.deleteRule = function (entity) {
     return $http({
-      url: '/paramFlow/rule/' + entity.id,
-      method: 'DELETE'
+        url: '/v2/paramFlow/rule/' + entity.id,
+        method: 'DELETE'
     });
   };
 

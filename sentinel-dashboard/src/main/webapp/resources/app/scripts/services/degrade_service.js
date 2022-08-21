@@ -8,15 +8,15 @@ app.service('DegradeService', ['$http', function ($http) {
       port: port
     };
     return $http({
-      url: 'degrade/rules.json',
-      params: param,
-      method: 'GET'
+        url: '/v2/degrade/rules.json',
+        params: param,
+        method: 'GET'
     });
   };
 
   this.newRule = function (rule) {
     return $http({
-        url: '/degrade/rule',
+        url: '/v2/degrade/rule',
         data: rule,
         method: 'POST'
     });
@@ -35,7 +35,7 @@ app.service('DegradeService', ['$http', function ($http) {
         slowRatioThreshold: rule.slowRatioThreshold,
     };
     return $http({
-        url: '/degrade/rule/' + rule.id,
+        url: '/v2/degrade/rule/' + rule.id,
         data: param,
         method: 'PUT'
     });
@@ -43,7 +43,7 @@ app.service('DegradeService', ['$http', function ($http) {
 
   this.deleteRule = function (rule) {
       return $http({
-          url: '/degrade/rule/' + rule.id,
+          url: '/v2/degrade/rule/' + rule.id,
           method: 'DELETE'
       });
   };
