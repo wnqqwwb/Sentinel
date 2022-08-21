@@ -5,8 +5,8 @@ import com.alibaba.csp.sentinel.datasource.Converter;
 import com.alibaba.csp.sentinel.util.StringUtil;
 import com.alibaba.nacos.api.config.ConfigService;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.beans.factory.annotation.Autowired;
 
-import javax.annotation.Resource;
 import java.util.Collections;
 import java.util.List;
 
@@ -18,10 +18,10 @@ public abstract class AbstractNacosProvider<T> implements DynamicRuleProvider<Li
 
     private static final long TIMEOUT_IN_MILLS = 3000;
 
-    @Resource
+    @Autowired
     private ConfigService configService;
 
-    @Resource
+    @Autowired
     private Converter<String, List<T>> converter;
 
     @Override

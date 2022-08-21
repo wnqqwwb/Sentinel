@@ -15,33 +15,23 @@
  */
 package com.alibaba.csp.sentinel.dashboard.controller.v2;
 
-import java.util.Date;
-import java.util.List;
-
 import com.alibaba.csp.sentinel.dashboard.auth.AuthAction;
 import com.alibaba.csp.sentinel.dashboard.auth.AuthService;
 import com.alibaba.csp.sentinel.dashboard.auth.AuthService.PrivilegeType;
-import com.alibaba.csp.sentinel.util.StringUtil;
-
 import com.alibaba.csp.sentinel.dashboard.datasource.entity.rule.FlowRuleEntity;
+import com.alibaba.csp.sentinel.dashboard.domain.Result;
 import com.alibaba.csp.sentinel.dashboard.repository.rule.InMemoryRuleRepositoryAdapter;
 import com.alibaba.csp.sentinel.dashboard.rule.DynamicRuleProvider;
 import com.alibaba.csp.sentinel.dashboard.rule.DynamicRulePublisher;
-import com.alibaba.csp.sentinel.dashboard.domain.Result;
-
+import com.alibaba.csp.sentinel.util.StringUtil;
+import com.alibaba.fastjson.JSON;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.beans.factory.annotation.Qualifier;
-import org.springframework.web.bind.annotation.DeleteMapping;
-import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.PathVariable;
-import org.springframework.web.bind.annotation.PostMapping;
-import org.springframework.web.bind.annotation.PutMapping;
-import org.springframework.web.bind.annotation.RequestBody;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RequestParam;
-import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.bind.annotation.*;
+
+import javax.annotation.Resource;
+import java.util.Date;
+import java.util.List;
 
 /**
  * Flow rule controller (v2).
@@ -55,14 +45,12 @@ public class FlowControllerV2 {
 
     private final Logger logger = LoggerFactory.getLogger(FlowControllerV2.class);
 
-    @Autowired
+    @Resource
     private InMemoryRuleRepositoryAdapter<FlowRuleEntity> repository;
 
-    @Autowired
-    @Qualifier("flowRuleDefaultProvider")
+    @Resource(name = "flowRuleNacosProvider")
     private DynamicRuleProvider<List<FlowRuleEntity>> ruleProvider;
-    @Autowired
-    @Qualifier("flowRuleDefaultPublisher")
+    @Resource(name = "flowRuleNacosPublisher")
     private DynamicRulePublisher<List<FlowRuleEntity>> rulePublisher;
 
     @GetMapping("/rules")
@@ -151,6 +139,7 @@ public class FlowControllerV2 {
         try {
             entity = repository.save(entity);
             publishRules(entity.getApp());
+            logger.info("Success to add flow rule, app = {}, rule = {}", entity.getApp(), JSON.toJSONString(entity));
         } catch (Throwable throwable) {
             logger.error("Failed to add flow rule", throwable);
             return Result.ofThrowable(-1, throwable);
@@ -192,6 +181,7 @@ public class FlowControllerV2 {
                 return Result.ofFail(-1, "save entity fail");
             }
             publishRules(oldEntity.getApp());
+            logger.info("Success to update flow rule, app = {}, rule = {}", entity.getApp(), JSON.toJSONString(entity));
         } catch (Throwable throwable) {
             logger.error("Failed to update flow rule", throwable);
             return Result.ofThrowable(-1, throwable);
@@ -213,6 +203,7 @@ public class FlowControllerV2 {
         try {
             repository.delete(id);
             publishRules(oldEntity.getApp());
+            logger.info("Success to delete flow rule, app = {}, rule = {}", oldEntity.getApp(), JSON.toJSONString(oldEntity));
         } catch (Exception e) {
             return Result.ofFail(-1, e.getMessage());
         }

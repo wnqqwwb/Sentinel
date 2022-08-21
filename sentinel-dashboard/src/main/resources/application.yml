@@ -19,7 +19,7 @@ logging:
   file:
     name: ${user.home}/logs/csp/sentinel-dashboard.log
   pattern:
-    file: %d{yyyy-MM-dd HH:mm:ss} [%thread] %-5level %logger{36} - %msg%n
+    file: '%d{yyyy-MM-dd HH:mm:ss} [%thread] %-5level %logger{36} - %msg%n'
   #logging.pattern.console= %d{yyyy-MM-dd HH:mm:ss} [%thread] %-5level %logger{36} - %msg%n
 
 #auth settings
@@ -39,5 +39,5 @@ sentinel:
     # sentinel rules nacos config
     rule:
       nacos:
-      server-addr: 124.222.130.129:8848
-      namespace: 563828cf-ce66-4318-8431-a619741ace27
+        server-addr: 124.222.130.129:8848
+        namespace: 563828cf-ce66-4318-8431-a619741ace27

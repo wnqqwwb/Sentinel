@@ -1,0 +1,14 @@
+{
+  "properties": [
+    {
+      "name": "sentinel.dashboard.rule.nacos.server-addr",
+      "type": "java.lang.String",
+      "description": "Description for sentinel.dashboard.rule.nacos.server-addr."
+    },
+    {
+      "name": "sentinel.dashboard.rule.nacos.namespace",
+      "type": "java.lang.String",
+      "description": "Description for sentinel.dashboard.rule.nacos.namespace."
+    }
+  ]
+}
