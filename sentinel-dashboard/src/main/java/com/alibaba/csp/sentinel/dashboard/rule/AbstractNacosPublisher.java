@@ -6,9 +6,9 @@ import com.alibaba.csp.sentinel.util.AssertUtil;
 import com.alibaba.nacos.api.config.ConfigService;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.util.CollectionUtils;
 
 import java.util.List;
+import java.util.concurrent.TimeUnit;
 
 /**
  * @author fanls
@@ -25,7 +25,7 @@ public abstract class AbstractNacosPublisher<T> implements DynamicRulePublisher<
     @Override
     public void publish(String appName, List<T> rules) throws Exception {
         AssertUtil.notEmpty(appName, "app name cannot be empty");
-        if (CollectionUtils.isEmpty(rules)) {
+        if (null == rules) {
             return;
         }
         // 将sentinel规则推送到nacos
@@ -35,6 +35,8 @@ public abstract class AbstractNacosPublisher<T> implements DynamicRulePublisher<
             log.error("{} rules publish failed", appName);
             throw new RuntimeException("rules publish failed");
         }
+        // 成功后阻塞一会，由于成功后去获取列表，这个时候还取不到
+        TimeUnit.MILLISECONDS.sleep(50);
     }
 
     /**

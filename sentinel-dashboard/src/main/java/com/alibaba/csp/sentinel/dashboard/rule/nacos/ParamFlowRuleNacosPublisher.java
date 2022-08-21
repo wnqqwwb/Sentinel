@@ -41,6 +41,6 @@ public class ParamFlowRuleNacosPublisher extends AbstractNacosPublisher<ParamFlo
 
     @Override
     protected String getPostfix() {
-        return NacosConfigUtil.FLOW_DATA_ID_POSTFIX;
+        return NacosConfigUtil.PARAM_FLOW_DATA_ID_POSTFIX;
     }
 }
